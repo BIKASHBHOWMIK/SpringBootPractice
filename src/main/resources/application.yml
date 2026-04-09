@@ -1,6 +1,8 @@
 spring:
   application:
     name: SpringBootPractice
+  main:
+    banner-mode: off
 
   datasource:
     url: jdbc:postgresql://localhost:5431/practicedb
@@ -20,4 +22,3 @@ spring:
   sql:
     init:
       mode: always
-
