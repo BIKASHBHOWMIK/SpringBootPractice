@@ -1,11 +1,8 @@
 package com.bhowmikbikash.SpringBootPractice.controller;
 
 import com.bhowmikbikash.SpringBootPractice.entity.User;
-import com.bhowmikbikash.SpringBootPractice.repository.UserRepository;
-import com.bhowmikbikash.SpringBootPractice.util.JwtUtil;
+import com.bhowmikbikash.SpringBootPractice.service.AuthService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,43 +12,29 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
+    private final AuthService authService;
 
-
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody User user) {
-
         try {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            user.setRole("USER");
-            userRepository.save(user);
-            return ResponseEntity.ok().body("User saved Successfully");
+            String message = authService.signup(user);
+            return ResponseEntity.ok().body(message);
         } catch (Exception e) {
-            throw new RuntimeException("User Signup failed");
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User user) {
-
         try {
-            User dbUser = userRepository.findByUsername(user.getUsername())
-                    .orElseThrow(() -> new UsernameNotFoundException(user.getUsername()));
-            if(passwordEncoder.matches(user.getPassword(),dbUser.getPassword())){
-                return ResponseEntity.ok().body(jwtUtil.generateToken(user.getUsername()));
-            }
-            throw new RuntimeException("Invalid username or password");
-        } catch (UsernameNotFoundException e) {
-            throw new RuntimeException("Invalid username or password");
+            String token = authService.login(user.getUsername(), user.getPassword());
+            return ResponseEntity.ok().body(token);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }
